@@ -1,9 +1,9 @@
 import pandas as pd
 
-file_path_transfer = "output_2022.csv"  # replace with your actual file path
+file_path_transfer = "../output_2022.csv"  # replace with your actual file path
 df_transfer = pd.read_csv(file_path_transfer)
 
-file_path_tax = "output_2022_tax.csv"
+file_path_tax = "../output_2022_tax.csv"
 df_tax = pd.read_csv(file_path_tax)
 
 df_transfer['ZipCode'] = df_transfer['deed situs zip code - static [28]'].astype(str).str[:5]
@@ -143,20 +143,25 @@ df_tax = df_tax.dropna(subset=['total_value'])
 total_value = df_tax.groupby(['ZipCode'])['total_value'].sum().reset_index()
 
 # Print the resulting DataFrame
-print(total_value)
+#print(total_value)
 
 merged_df = cumulative_purchases_investor.merge(total_value, on='ZipCode', how='left')
 
-print(merged_df)
+#print(merged_df)
 
 # Calculate investor presence
 merged_df['investor_presence_percentage'] = round((merged_df['investor_sales_amount'] / merged_df['total_value']) * 100, 3)
 
-print(merged_df)
+#print(merged_df)
 
-merged_df.to_csv("summary_investor_purchases.csv")
+#merged_df.to_csv("summary_investor_purchases.csv")
 
-pivot_table = merged_df.pivot_table(index='ZipCode', columns='Year', values='investor_presence_percentage', fill_value=0)
+final_df = merged_df[['Year', 'ZipCode', 'investor_presence_percentage']]
 
-# Print the resulting DataFrame
-pivot_table.to_csv("investor_presence_by_zip_and_year_all_res_stock.csv")
+# Sort the DataFrame by ZipCode to group the observations
+final_df = final_df.sort_values(by=['ZipCode', 'Year'])
+
+# Reset index and ensure all columns desired are present
+final_df = final_df[['Year', 'ZipCode', 'investor_presence_percentage']]
+
+final_df.to_csv("../investor_presence_by_zip_and_year_all_res_stock_long.csv", index=False)

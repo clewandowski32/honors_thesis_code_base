@@ -2,7 +2,7 @@ import pandas as pd
 from tabulate import tabulate
 
 # Load the CSV file
-file_path = "output_2022.csv"
+file_path = "../output_2022.csv"
 df = pd.read_csv(file_path)
 
 # Ensure the relevant columns are treated as strings
@@ -131,7 +131,7 @@ conditions = (
 identified_investors = filtered_df[conditions]
 
 # Export to CSV
-identified_investors.to_csv('output_2022_id_inv.csv', na_rep='NA', index=False)
+#identified_investors.to_csv('output_2022_id_inv.csv', na_rep='NA', index=False)
 
 #investor_purchases = filtered_df[conditions].groupby(['Year', 'ZipCode'])['sale_amount']\
 #                                             .sum().reset_index()
@@ -147,10 +147,12 @@ investor_purchases.rename(columns={'sale_amount': 'investor_sales_amount'}, inpl
 merged_df = pd.merge(total_purchases, investor_purchases, on=['Year', 'ZipCode'], how='left').fillna(0)
 merged_df['investor_presence_percentage'] = round((merged_df['investor_sales_amount'] / merged_df['sale_amount']) * 100, 3)
 
-# Pivot the table for a better display
-pivot_table = merged_df.pivot_table(index='ZipCode', columns='Year', values='investor_presence_percentage', fill_value=0)
+final_df = merged_df[['Year', 'ZipCode', 'investor_presence_percentage']]
 
-pivot_table['Average_Investor_Presence'] = round(pivot_table.mean(axis=1), 3)
+# Sort the DataFrame by ZipCode to group the observations
+final_df = final_df.sort_values(by=['ZipCode', 'Year'])
 
-# Optionally, save the pivot table to a new CSV file
-pivot_table.to_csv("investor_presence_by_zip_and_year_all_res_flow.csv")
+# Reset index and ensure all columns desired are present
+final_df = final_df[['Year', 'ZipCode', 'investor_presence_percentage']]
+
+final_df.to_csv("../investor_presence_by_zip_and_year_all_res_flow_long.csv", index=False)

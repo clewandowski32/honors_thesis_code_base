@@ -1,37 +1,51 @@
 import pandas as pd
 
-data = pd.read_csv('Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv')
+data = pd.read_csv('../Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv')
 
 # Filter data for Cuyahoga County
 cuyahoga_data = data[data['CountyName'] == 'Cuyahoga County']
+# Change RegionName identifier to zip code
+cuyahoga_data['ZipCode'] = cuyahoga_data['RegionName']
 
-# Extract the columns for January of each relevant year
+# Extract the columns for December of each relevant year
 years = list(range(2006, 2023))
-jan_columns = [f"{year}-12-31" for year in years]
-selected_columns = ['RegionID', 'RegionName', 'RegionType', 'StateName', 'State', 'City', 'Metro', 'CountyName'] + jan_columns
-cuyahoga_data_jan = cuyahoga_data[selected_columns]
+dec_columns = [f"{year}-12-31" for year in years]
+selected_columns = ['ZipCode'] + dec_columns
+cuyahoga_data_dec = cuyahoga_data[selected_columns]
 
 # Calculate year-over-year price growth for each ZIP code
-cuyahoga_data_jan.set_index('RegionID', inplace=True)
-growth_data = cuyahoga_data_jan[jan_columns].pct_change(axis=1) * 100
+cuyahoga_data_dec.set_index('ZipCode', inplace=True)
+growth_data = cuyahoga_data_dec[dec_columns].pct_change(axis=1) * 100
 
 growth_data = growth_data.round(3)
-
-#print(cuyahoga_data_jan)
 
 # Extract growth rates for the relevant years (2007 to 2022, because growth for 2007 needs 2006 data, which we do not use)
 growth_data_filtered = growth_data.loc[:, f'{years[1]}-12-31':f'{years[-1]}-12-31']
 
-#print(growth_data_filtered)
-
-# Re-add the identifying columns to the growth data
 growth_data_filtered = growth_data_filtered.reset_index()
-final_data = cuyahoga_data.loc[:, ['RegionID', 'RegionName', 'RegionType', 'StateName', 'State', 'City', 'Metro', 'CountyName']].merge(growth_data_filtered, on='RegionID')
 
-# Compute average growth for each ZIP code
-growth_columns = [column for column in growth_data_filtered.columns if column.endswith('-12-31')]
-final_data['Average_Growth'] = final_data[growth_columns].mean(axis=1).round(3)
+# Melt the DataFrame to long format for growth data
+long_format_growth_df = growth_data_filtered.melt(id_vars=['ZipCode'],
+                                                  var_name='Year',
+                                                  value_name='Price_Growth')
+# Adding the 'Year' column for clarity
+long_format_growth_df['Year'] = long_format_growth_df['Year'].str[:4]
 
-# Export the data to a CSV file
-final_data.to_csv('cuyahoga_county_price_growth.csv', index=False)
+long_format_growth_df = long_format_growth_df.sort_values(by=['ZipCode', 'Year'])
+
+# Also melt the price data to long format
+cuyahoga_data_dec.reset_index(inplace=True)
+long_format_price_df = cuyahoga_data_dec.melt(id_vars=['ZipCode'],
+                                              var_name='Year',
+                                              value_name='Price')
+long_format_price_df['Year'] = long_format_price_df['Year'].str[:4]
+
+long_format_price_df = long_format_price_df.sort_values(by=['ZipCode', 'Year'])
+
+long_format_price_df['Price'] = long_format_price_df['Price'].round(2)
+
+# Merge the growth data and price data
+final_long_df = pd.merge(long_format_growth_df, long_format_price_df, on=['ZipCode', 'Year'])
+
+final_long_df.to_csv('../cuyahoga_county_price_growth_and_prices_2007_to_2022.csv', index=False)
 

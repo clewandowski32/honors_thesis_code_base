@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load the datasets
-income_2012 = pd.read_csv('ACSST5Y2012.S1901-2024-11-05T203537.csv', index_col=0)
-income_2022 = pd.read_csv('ACSST5Y2022.S1901-2024-11-05T203357.csv', index_col=0)
+income_2012 = pd.read_csv('../ACSST5Y2012.S1901-2024-11-05T203537.csv', index_col=0)
+income_2022 = pd.read_csv('../ACSST5Y2022.S1901-2024-11-05T203357.csv', index_col=0)
 
 # Filter columns to only include those that match the pattern "ZCTA5 <ZipCode>!!Households!!Estimate"
 pattern = r'ZCTA5 \d{5}!!Households!!Estimate'
@@ -50,4 +50,4 @@ for column_2012 in median_income_2012.index:
 cagr_df = pd.DataFrame(cagr_results)
 
 # Display the result
-cagr_df.to_csv('cagr_median_income.csv')
+cagr_df.to_csv('../cagr_median_income.csv')
